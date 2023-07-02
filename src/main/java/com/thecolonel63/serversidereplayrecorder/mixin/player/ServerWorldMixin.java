@@ -1,17 +1,14 @@
 package com.thecolonel63.serversidereplayrecorder.mixin.player;
 
 import com.thecolonel63.serversidereplayrecorder.recorder.PlayerRecorder;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvent;
 import net.minecraft.util.math.BlockPos;
-import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+import java.util.Set;
 
 @Mixin(ServerWorld.class)
 public class ServerWorldMixin {
@@ -42,6 +39,6 @@ public class ServerWorldMixin {
     //Block breaking
     @Inject(method = "setBlockBreakingInfo", at = @At("TAIL"))
     private void saveBlockBreakingProgressPacket(int entityId, BlockPos pos, int progress, CallbackInfo ci) {
-        PlayerRecorder.playerRecorderMap.forEach((connection, playerThreadRecorder) -> playerThreadRecorder.onBlockBreakAnim(entityId, pos, progress));
+        Set.copyOf(PlayerRecorder.playerRecorderMap.values()).forEach((playerThreadRecorder) -> playerThreadRecorder.onBlockBreakAnim(entityId, pos, progress));
     }
 }

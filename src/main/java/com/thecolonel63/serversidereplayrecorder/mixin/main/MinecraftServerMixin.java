@@ -8,10 +8,11 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import java.util.Iterator;
 import java.util.function.BooleanSupplier;
 
 @Mixin(MinecraftServer.class)
-public class MinecraftServerMixin {
+public abstract class MinecraftServerMixin {
 
     @Inject(method = "runServer", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/MinecraftServer;setupServer()Z"))
     private void onInitServer(CallbackInfo ci) {
@@ -20,7 +21,11 @@ public class MinecraftServerMixin {
 
     @Inject(method = "shutdown", at = @At(value = "HEAD"))
     private void onStopServer(CallbackInfo ci) {
-        for (ReplayRecorder recorder : ReplayRecorder.active_recorders){
+        Iterator<ReplayRecorder> iterator = ReplayRecorder.active_recorders.iterator();
+        //Use iterator to avoid Concurrent Modification Exception
+        while(iterator.hasNext()){
+            ReplayRecorder recorder = iterator.next();
+            iterator.remove();
             recorder.handleDisconnect();
         }
     }
@@ -33,6 +38,7 @@ public class MinecraftServerMixin {
     @Inject(method = "tick", at = @At("RETURN"))
     void onTickEnd(BooleanSupplier shouldKeepTicking, CallbackInfo ci){
         ReplayRecorder.active_recorders.forEach(ReplayRecorder::onServerTick);
+        ReplayRecorder.prune_existing_recorders();
     }
 
 }
